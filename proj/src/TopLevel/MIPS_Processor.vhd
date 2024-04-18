@@ -101,11 +101,15 @@ architecture structure of MIPS_Processor is
     signal id_SignExt       : std_logic_vector(N-1 downto 0)    := x"00000000";
     signal id_ZeroExt       : std_logic_vector(N-1 downto 0)    := x"00000000";
     signal id_RegWrAddr     : std_logic_vector(M-1 downto 0)    := "00000";
+    signal id_Reg1Addr      : std_logic_vector(M-1 downto 0)    := "00000";
+    signal id_Reg2Addr      : std_logic_vector(M-1 downto 0)    := "00000";
     
     -- Temp signals for ex stage
     -- in
     signal ex_EXControl     : ex_control_t;
     signal ex_Reg1Out       : std_logic_vector(N-1 downto 0)    := x"00000000";
+    signal ex_Reg1Addr      : std_logic_vector(M-1 downto 0)    := "00000";
+    signal ex_Reg2Addr      : std_logic_vector(M-1 downto 0)    := "00000";
     signal ex_Shamt         : std_logic_vector(N-1 downto 0)    := x"00000000";
     signal ex_SignExt       : std_logic_vector(N-1 downto 0)    := x"00000000";
     signal ex_ZeroExt       : std_logic_vector(N-1 downto 0)    := x"00000000";
@@ -285,6 +289,8 @@ architecture structure of MIPS_Processor is
             i_SignExt       : in std_logic_vector(N-1 downto 0);
             i_PCInc         : in std_logic_vector(N-1 downto 0);
             i_RegWrAddr     : in std_logic_vector(M-1 downto 0);
+            i_Reg1Addr      : in std_logic_vector(M-1 downto 0);
+            i_Reg2Addr      : in std_logic_vector(M-1 downto 0);
             i_EXControl     : in ex_control_t;
             i_MEMControl    : in mem_control_t;
             i_WBControl     : in wb_control_t;
@@ -295,6 +301,8 @@ architecture structure of MIPS_Processor is
             o_SignExt       : out std_logic_vector(N-1 downto 0);
             o_PCInc         : out std_logic_vector(N-1 downto 0);
             o_RegWrAddr     : out std_logic_vector(M-1 downto 0);
+            o_Reg1Addr      : out std_logic_vector(M-1 downto 0);
+            o_Reg2Addr      : out std_logic_vector(M-1 downto 0);
             o_EXControl     : out ex_control_t;
             o_MEMControl    : out mem_control_t;
             o_WBControl     : out wb_control_t
@@ -416,9 +424,9 @@ begin
     i_HDU: HDU
     port map(
         i_MemRd     => ex_MEMControl.mem_rd,
-        i_EXRegRt   => ex_Reg2Out,
-        i_IDRegRs   => id_Reg1Out,
-        i_IDRegRt   => id_Reg2Out,
+        i_EXRegRt   => ex_Reg2Addr,
+        i_IDRegRs   => id_Reg1Addr,
+        i_IDRegRt   => id_Reg2Addr,
         i_PCSel     => s_Control.pc_sel,
         o_DH        => s_HDU_DataHazard,
         o_CH        => s_HDU_ControlHazard
@@ -464,8 +472,8 @@ begin
         i_RST   => iRST,
         i_W     => s_RegWrData,
         i_WS    => s_RegWrAddr,
-        i_R1S   => id_Inst(25 downto 21),
-        i_R2S   => id_Inst(20 downto 16),
+        i_R1S   => id_Reg1Addr,
+        i_R2S   => id_Reg2Addr,
         o_R1    => id_Reg1Out,
         o_R2    => id_Reg2Out
     );
@@ -475,6 +483,8 @@ begin
     id_Shamt <= ((0 to 26 => '0') & id_Inst(10 downto 6));
     id_SignExt <= (0 to 15 => id_Inst(15)) & id_Inst(15 downto 0);
     id_ZeroExt <= x"0000" & id_Inst(15 downto 0);
+    id_Reg1Addr <= id_Inst(25 downto 21);
+    id_Reg2Addr <= id_Inst(20 downto 16);
 
     --------------- ID/EX STAGE --------------------------
 
@@ -490,7 +500,9 @@ begin
         i_SignExt       => id_SignExt,
         i_ZeroExt       => id_ZeroExt,
         i_PCInc         => id_PCInc, 
-        i_RegWrAddr     => id_RegWrAddr,      
+        i_RegWrAddr     => id_RegWrAddr,   
+        i_Reg1Addr      => id_Reg1Addr,  
+        i_Reg2Addr      => id_Reg2Addr,     
         i_EXControl     => id_EXControl,     
         i_MEMControl    => id_MEMControl,
         i_WBControl     => id_WBControl,
@@ -500,7 +512,9 @@ begin
         o_SignExt       => ex_SignExt,
         o_ZeroExt       => ex_ZeroExt,
         o_PCInc         => ex_PCInc, 
-        o_RegWrAddr     => ex_RegWrAddr,      
+        o_RegWrAddr     => ex_RegWrAddr, 
+        o_Reg1Addr     => ex_Reg1Addr,  
+        o_Reg2Addr     => ex_Reg2Addr,       
         o_EXControl     => ex_EXControl,     
         o_MEMControl    => ex_MEMControl,
         o_WBControl     => ex_WBControl

@@ -19,14 +19,14 @@ use work.MIPS_types.all;
 
 entity HDU is
     generic(
-        N : integer := DATA_WIDTH
+        M : integer := ADDR_WIDTH
     );
 
     port(
         i_MemRd         : in std_logic;
-        i_EXRegRt       : in std_logic_vector(N-1 downto 0);
-        i_IDRegRs       : in std_logic_vector(N-1 downto 0);
-        i_IDRegRt       : in std_logic_vector(N-1 downto 0);
+        i_EXRegRt       : in std_logic_vector(M-1 downto 0);
+        i_IDRegRs       : in std_logic_vector(M-1 downto 0);
+        i_IDRegRt       : in std_logic_vector(M-1 downto 0);
         i_PCSel         : in std_logic_vector(1 downto 0);
         o_DH            : out std_logic;
         o_CH            : out std_logic

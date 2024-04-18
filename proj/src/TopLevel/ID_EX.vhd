@@ -36,6 +36,8 @@ entity ID_EX is
         i_SignExt       : in std_logic_vector(N-1 downto 0);
         i_PCInc         : in std_logic_vector(N-1 downto 0);
         i_RegWrAddr     : in std_logic_vector(M-1 downto 0);
+        i_Reg1Addr      : in std_logic_vector(M-1 downto 0);
+        i_Reg2Addr      : in std_logic_vector(M-1 downto 0);
         i_EXControl     : in ex_control_t;
         i_MEMControl    : in mem_control_t;
         i_WBControl     : in wb_control_t;
@@ -46,6 +48,8 @@ entity ID_EX is
         o_SignExt       : out std_logic_vector(N-1 downto 0);
         o_PCInc         : out std_logic_vector(N-1 downto 0);
         o_RegWrAddr     : out std_logic_vector(M-1 downto 0);
+        o_Reg1Addr      : out std_logic_vector(M-1 downto 0);
+        o_Reg2Addr      : out std_logic_vector(M-1 downto 0);
         o_EXControl     : out ex_control_t;
         o_MEMControl    : out mem_control_t;
         o_WBControl     : out wb_control_t
@@ -82,6 +86,8 @@ architecture structure of ID_EX is
     signal s_SignExt            : std_logic_vector(N-1 downto 0);
     signal s_PCInc              : std_logic_vector(N-1 downto 0);
     signal s_RegWrAddr          : std_logic_vector(M-1 downto 0);
+    signal s_Reg1Addr           : std_logic_vector(M-1 downto 0);
+    signal s_Reg2Addr           : std_logic_vector(M-1 downto 0);
     signal s_EXControl          : ex_control_t;
     signal s_MEMControl         : mem_control_t;
     signal s_WBControl          : wb_control_t;
@@ -212,6 +218,34 @@ begin
         i_WE => s_WE,
         i_D => s_RegWrAddr,
         o_Q => o_RegWrAddr
+    );
+
+    -- Reg1Addr flip-flop
+    s_Reg1Addr <= "00000" when i_FLUSH = '1' else i_Reg1Addr;
+    Reg1Addr_dffg: n_dffg
+    generic map(
+        N => M
+    )
+    port map(
+        i_CLK => i_CLK,
+        i_RST => i_RST,
+        i_WE => s_WE,
+        i_D => s_Reg1Addr,
+        o_Q => o_Reg1Addr
+    );
+
+    -- Reg2Addr flip-flop
+    s_Reg2Addr <= "00000" when i_FLUSH = '1' else i_Reg2Addr;
+    Reg2Addr_dffg: n_dffg
+    generic map(
+        N => M
+    )
+    port map(
+        i_CLK => i_CLK,
+        i_RST => i_RST,
+        i_WE => s_WE,
+        i_D => s_Reg2Addr,
+        o_Q => o_Reg2Addr
     );
 
     -- Instantiate flip-flops for control signals
