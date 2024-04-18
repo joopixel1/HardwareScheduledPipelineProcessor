@@ -103,11 +103,7 @@ architecture structure of MIPS_Processor is
     -- Temp signals for if stage
     -- out
     signal if_Inst          : std_logic_vector(N-1 downto 0)    := x"00000000";
-    signal if_InstWOHazard  : std_logic_vector(N-1 downto 0)    := x"00000000";
     signal if_PCInc         : std_logic_vector(N-1 downto 0)    := x"00000000";
-    signal if_PCWr          : std_logic                         := '1';
-    signal if_IFIDWr        : std_logic                         := '1';
-
 
     -- Temp signals for id stage
     -- in
@@ -169,12 +165,12 @@ architecture structure of MIPS_Processor is
         );
 
         port(
-          i_CLK         : in std_logic;                            -- Clock input
-          i_RST         : in std_logic;                            -- Reset input
-          i_WE          : in std_logic;                            -- Write enable input
-          i_D           : in std_logic_vector(N-1 downto 0);       -- Data value input
-          o_Q           : out std_logic_vector(N-1 downto 0)       -- Data value output
-      );
+            i_CLK        : in std_logic;                            -- Clock input
+            i_RST        : in std_logic;                            -- Reset input
+            i_STALL      : in std_logic;                            -- Write enable input
+            i_D          : in std_logic_vector(N-1 downto 0);       -- Data value input
+            o_Q          : out std_logic_vector(N-1 downto 0)       -- Data value output
+        );
     end component;
 
     component adder_n
@@ -279,7 +275,8 @@ architecture structure of MIPS_Processor is
         port(
             i_CLK           : in std_logic;
             i_RST           : in std_logic;
-            i_WE            : in std_logic;
+            i_STALL         : in std_logic;
+            i_FLUSH         : in std_logic;
             i_PCInc         : in std_logic_vector(N-1 downto 0);
             i_Inst          : in std_logic_vector(N-1 downto 0);
             o_PCInc         : out std_logic_vector(N-1 downto 0);
@@ -377,13 +374,11 @@ begin
         s_PCBranchNext when "10",
         if_PCInc when others;
 
-    if_PCWr <= '0' when (s_HDU_DataHazard = '1') else '1';
-
     PC : pc_dffg
     port map(
         i_CLK       => iCLK,
         i_RST       => iRST,
-        i_WE        => if_PCWr,
+        i_STALL     => s_HDU_DataHazard,
         i_D         => s_PCNext,
         o_Q         => s_NextInstAddr
     );
@@ -413,18 +408,13 @@ begin
     s_Inst <= if_Inst;
 
     -------------- IF/ID STAGE -----------------------------
-
-    with s_HDU_ControlHazard select
-        if_InstWOHazard <= x"00000000" when '1',
-        if_Inst when others;
-
-    if_IFIDWr <= '0' when (s_HDU_DataHazard = '1') else '1';
     
     IIF_ID: IF_ID
     port map(
         i_CLK           => iCLK,
         i_RST           => iRST,
-        i_WE            => if_IFIDWr,
+        i_STALL         => s_HDU_DataHazard,
+        i_FLUSH         => s_HDU_ControlHazard,
         i_PCInc         => if_PCInc,
         i_Inst          => if_InstWOHazard,
         o_PCInc         => id_PCInc,
@@ -506,6 +496,7 @@ begin
     port map(
         i_CLK           => iCLK,
         i_RST           => iRST,
+        i_STALL         =>
         i_Reg1Out       => id_Reg1Out,
         i_Reg2Out       => id_Reg2Out,
         i_Shamt         => id_Shamt,

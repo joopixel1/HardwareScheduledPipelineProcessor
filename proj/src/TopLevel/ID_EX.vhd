@@ -27,6 +27,8 @@ entity ID_EX is
     port(
         i_CLK           : in std_logic;
         i_RST           : in std_logic;
+        i_STALL         : in std_logic;
+        i_FLUSH         : in std_logic;
         i_Reg1Out       : in std_logic_vector(N-1 downto 0);
         i_Reg2Out       : in std_logic_vector(N-1 downto 0);
         i_Shamt         : in std_logic_vector(N-1 downto 0);
@@ -51,6 +53,8 @@ entity ID_EX is
 end ID_EX;
 
 architecture structure of ID_EX is
+
+    signal s_WE      : std_logic_vector(N-1 downto 0); 
 
     component n_dffg
         generic(
@@ -98,12 +102,14 @@ architecture structure of ID_EX is
 
 begin
 
+    s_WE <= '0' when (i_STALL = '1') else '1';
+
     Reg1Out_input : n_dffg
     port MAP(
         i_CLK   => i_CLK,
         i_RST   => i_RST,
-        i_WE    => '1',
-        i_D     => i_Reg1Out,
+        i_WE    => s_WE,
+        i_D     => x"00000000" when (i_FLUSH = '1') else i_Reg1Out,
         o_Q     => o_Reg1Out
     );
 
@@ -111,8 +117,8 @@ begin
     port MAP(
         i_CLK   => i_CLK,
         i_RST   => i_RST,
-        i_WE    => '1',
-        i_D     => i_Reg2Out,
+        i_WE    => s_WE,
+        i_D     => x"00000000" when (i_FLUSH = '1') else i_Reg2Out,
         o_Q     => o_Reg2Out
     );
 
@@ -120,8 +126,8 @@ begin
     port MAP(
         i_CLK   => i_CLK,
         i_RST   => i_RST,
-        i_WE    => '1',
-        i_D     => i_ZeroExt,
+        i_WE    => s_WE,
+        i_D     => x"00000000" when (i_FLUSH = '1') else i_ZeroExt,
         o_Q     => o_ZeroExt
     );
 
@@ -129,8 +135,8 @@ begin
     port MAP(
         i_CLK   => i_CLK,
         i_RST   => i_RST,
-        i_WE    => '1',
-        i_D     => i_SignExt,
+        i_WE    => s_WE,
+        i_D     => x"00000000" when (i_FLUSH = '1') else i_SignExt,
         o_Q     => o_SignExt
     );
 
@@ -138,8 +144,8 @@ begin
     port MAP(
         i_CLK   => i_CLK,
         i_RST   => i_RST,
-        i_WE    => '1',
-        i_D     => i_Shamt,
+        i_WE    => s_WE,
+        i_D     => x"00000000" when (i_FLUSH = '1') else i_Shamt,
         o_Q     => o_Shamt
     );
 
@@ -147,8 +153,8 @@ begin
     port MAP(
         i_CLK   => i_CLK,
         i_RST   => i_RST,
-        i_WE    => '1',
-        i_D     => i_PCInc,
+        i_WE    => s_WE,
+        i_D     => x"00000000" when (i_FLUSH = '1') else i_PCInc,
         o_Q     => o_PCInc
     );
 
@@ -159,8 +165,8 @@ begin
     port MAP(
         i_CLK   => i_CLK,
         i_RST   => i_RST,
-        i_WE    => '1',
-        i_D     => i_RegWrAddr,
+        i_WE    => s_WE,
+        i_D     => "00000" when (i_FLUSH = '1') else i_RegWrAddr,
         o_Q     => o_RegWrAddr
     );
 
@@ -168,8 +174,8 @@ begin
     port map(
         i_CLK   => i_CLK,
         i_RST   => i_RST,
-        i_WE    => '1',
-        i_D     => i_EXControl,
+        i_WE    => s_WE,
+        i_D     => x"00000000" when (i_FLUSH = '1') else i_EXControl,
         o_Q     => o_EXControl
     );
 
@@ -177,8 +183,8 @@ begin
     port map(
         i_CLK   => i_CLK,
         i_RST   => i_RST,
-        i_WE    => '1',
-        i_D     => i_MEMControl,
+        i_WE    => s_WE,
+        i_D     => x"00000000" when (i_FLUSH = '1') else i_MEMControl,
         o_Q     => o_MEMControl
     );
 
@@ -186,8 +192,8 @@ begin
     port map(
         i_CLK   => i_CLK,
         i_RST   => i_RST,
-        i_WE    => '1',
-        i_D     => i_WBControl,
+        i_WE    => s_WE,
+        i_D     => x"00000000" when (i_FLUSH = '1') else i_WBControl,
         o_Q     => o_WBControl
     );
 

@@ -28,7 +28,8 @@ entity IF_ID is
     port(
         i_CLK           : in std_logic;
         i_RST           : in std_logic;
-        i_WE            : in std_logic;
+        i_STALL         : in std_logic;
+        i_FLUSH         : in std_logic;
         i_PCInc         : in std_logic_vector(N-1 downto 0);
         i_Inst          : in std_logic_vector(N-1 downto 0);
         o_PCInc         : out std_logic_vector(N-1 downto 0);
@@ -38,6 +39,8 @@ entity IF_ID is
 end IF_ID;
 
 architecture structure of IF_ID is
+
+    signal s_WE      : std_logic_vector(N-1 downto 0); 
 
     component n_dffg
         generic(N  : positive  := 32);
@@ -52,12 +55,14 @@ architecture structure of IF_ID is
 
 begin
 
+    s_WE <= '0' when (i_STALL = '1') else '1';
+
     pc_input : n_dffg
         port MAP(
             i_CLK       => i_CLK,
             i_RST       => i_RST,
-            i_WE        => i_WE,
-            i_D         => i_PCInc,
+            i_WE        => s_WE,
+            i_D         => x"00000000" when (i_FLUSH = '1') else i_PCInc,
             o_Q         => o_PCInc
         );
 
@@ -65,11 +70,9 @@ begin
         port MAP(
             i_CLK       => i_CLK,
             i_RST       => i_RST,
-            i_WE        => i_WE,
-            i_D         => i_Inst,
+            i_WE        => s_WE,
+            i_D         => x"00000000" when (i_FLUSH = '1') else i_Inst,
             o_Q         => o_Inst
         );
-
-
 
 end structure;
