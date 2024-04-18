@@ -35,6 +35,6 @@ end HDU;
 
 architecture behavior of HDU is
 begin
-    o_DH <= (i_MemRd  and ((i_EXRegRt = i_IDRegRs) or (i_EXRegRt = i_IDRegRt))):
-    o_CH <= not (i_PCSel = "00");
+    o_DH <= '1' when ((i_MemRd = '1')  and ((i_EXRegRt = i_IDRegRs) or (i_EXRegRt = i_IDRegRt))) else '0';
+    o_CH <= '1' when not (i_PCSel = "00") else '0';
 end behavior;

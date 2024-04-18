@@ -53,7 +53,13 @@ architecture behavior of MEM_WB is
         reg_wr_sel          => "00"
     );
 
-    signal s_WE      : std_logic_vector(N-1 downto 0); 
+    signal s_WE      : std_logic; 
+    signal s_ALUOut       : std_logic_vector(N-1 downto 0);
+    signal s_DMEMOut      : std_logic_vector(N-1 downto 0);
+    signal s_PartialMemOut: std_logic_vector(N-1 downto 0);
+    signal s_PCInc        : std_logic_vector(N-1 downto 0);
+    signal s_RegWrAddr    : std_logic_vector(M-1 downto 0);
+    signal s_WBControl    : wb_control_t;
 
     component n_dffg
         generic (
@@ -83,62 +89,73 @@ begin
     s_WE <= '0' when (i_STALL = '1') else '1';
 
     -- Instantiate D flip-flops for each input
+    -- ALUOut flip-flop
+    s_ALUOut <= (others => '0') when i_FLUSH = '1' else i_ALUOut;
     ALUOut_dffg: n_dffg
-    port map (
+    port map(
         i_CLK => i_CLK,
         i_RST => i_RST,
-        i_WE  => s_WE,
-        i_D   => x"00000000" when (i_FLUSH = '1') else i_ALUOut,
-        o_Q   => o_ALUOut
+        i_WE => s_WE,
+        i_D => s_ALUOut,
+        o_Q => o_ALUOut
     );
 
+    -- DMEMOut flip-flop
+    s_DMEMOut <= (others => '0') when i_FLUSH = '1' else i_DMEMOut;
     DMEMOut_dffg: n_dffg
-    port map (
+    port map(
         i_CLK => i_CLK,
         i_RST => i_RST,
-        i_WE  => s_WE,
-        i_D   => x"00000000" when (i_FLUSH = '1') else i_DMEMOut,
-        o_Q   => o_DmemOut
+        i_WE => s_WE,
+        i_D => s_DMEMOut,
+        o_Q => o_DmemOut
     );
 
+    -- PartialMemOut flip-flop
+    s_PartialMemOut <= (others => '0') when i_FLUSH = '1' else i_PartialMemOut;
     PartialMemOut_dffg: n_dffg
-    port map (
+    port map(
         i_CLK => i_CLK,
         i_RST => i_RST,
-        i_WE  => s_WE,
-        i_D   => x"00000000" when (i_FLUSH = '1') else i_PartialMemOut,
-        o_Q   => o_PartialMemOut
+        i_WE => s_WE,
+        i_D => s_PartialMemOut,
+        o_Q => o_PartialMemOut
     );
 
+    -- PCInc flip-flop
+    s_PCInc <= (others => '0') when i_FLUSH = '1' else i_PCInc;
     PCInc_dffg: n_dffg
-    port map (
+    port map(
         i_CLK => i_CLK,
         i_RST => i_RST,
-        i_WE  => s_WE,
-        i_D   => x"00000000" when (i_FLUSH = '1') else i_PCInc,
-        o_Q   => o_PCInc
+        i_WE => s_WE,
+        i_D => s_PCInc,
+        o_Q => o_PCInc
     );
 
+    -- RegWrAddr flip-flop
+    s_RegWrAddr <= (others => '0') when i_FLUSH = '1' else i_RegWrAddr;
     RegWrAddr_dffg: n_dffg
     generic map(
-        N       => M
+        N => M
     )
-    port map (
+    port map(
         i_CLK => i_CLK,
         i_RST => i_RST,
-        i_WE  => s_WE,
-        i_D   => "00000" when (i_FLUSH = '1') else i_RegWrAddr,
-        o_Q   => o_RegWrAddr
+        i_WE => s_WE,
+        i_D => s_RegWrAddr,
+        o_Q => o_RegWrAddr
     );
 
-    -- Instantiate flip-flop for WB control signal
+    -- WBControl flip-flop
+    s_WBControl <= zero_wb_control when i_FLUSH = '1' else i_WBControl;
     WBControl_dffg: wb_dffg
-    port map (
+    port map(
         i_CLK => i_CLK,
         i_RST => i_RST,
-        i_WE  => s_WE,
-        i_D   => zero_wb_control when (i_FLUSH = '1') else i_WBControl,
-        o_Q   => o_WBControl
+        i_WE => s_WE,
+        i_D => s_WBControl,
+        o_Q => o_WBControl
     );
 
 end architecture behavior;

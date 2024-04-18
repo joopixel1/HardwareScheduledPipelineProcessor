@@ -39,7 +39,8 @@ end pc_dffg;
 
 architecture structure of pc_dffg is
 
-    signal s_WE   : std_logic_vector(N-1 downto 0); 
+    signal s_WE   : std_logic; 
+    signal f_D    : std_logic_vector(N-1 downto 0);    -- flushed D
     signal s_D    : std_logic_vector(N-1 downto 0);    -- Multiplexed input to the FF
     signal s_Q    : std_logic_vector(N-1 downto 0);    -- Output of the FF
 
@@ -51,8 +52,9 @@ begin
   s_WE <= '0' when (i_STALL = '1') else '1';
 
   -- Create a multiplexed input to the FF based on s_WE
+  f_D <= x"00000000" when (i_FLUSH = '1') else i_D;
   with s_WE select
-    s_D <= (x"00000000" when (i_FLUSH = '1') else i_D) when '1',
+    s_D <= f_D when '1',
            s_Q when others;
   
   -- This process handles the asyncrhonous reset and

@@ -74,7 +74,17 @@ architecture structure of ID_EX is
         reg_wr_sel          => "00"
     );
 
-    signal s_WE      : std_logic_vector(N-1 downto 0); 
+    signal s_WE                 : std_logic;
+    signal s_Reg1Out            : std_logic_vector(N-1 downto 0);
+    signal s_Reg2Out            : std_logic_vector(N-1 downto 0);
+    signal s_Shamt              : std_logic_vector(N-1 downto 0);
+    signal s_ZeroExt            : std_logic_vector(N-1 downto 0);
+    signal s_SignExt            : std_logic_vector(N-1 downto 0);
+    signal s_PCInc              : std_logic_vector(N-1 downto 0);
+    signal s_RegWrAddr          : std_logic_vector(M-1 downto 0);
+    signal s_EXControl          : ex_control_t;
+    signal s_MEMControl         : mem_control_t;
+    signal s_WBControl          : wb_control_t;
 
     component n_dffg
         generic(
@@ -124,97 +134,119 @@ begin
 
     s_WE <= '0' when (i_STALL = '1') else '1';
 
-    Reg1Out_input : n_dffg
-    port MAP(
-        i_CLK   => i_CLK,
-        i_RST   => i_RST,
-        i_WE    => s_WE,
-        i_D     => x"00000000" when (i_FLUSH = '1') else i_Reg1Out,
-        o_Q     => o_Reg1Out
+    -- Reg1Out flip-flop
+    s_Reg1Out <= (others => '0') when i_FLUSH = '1' else i_Reg1Out;
+    Reg1Out_dffg: n_dffg
+    port map(
+        i_CLK => i_CLK,
+        i_RST => i_RST,
+        i_WE => s_WE,
+        i_D => s_Reg1Out,
+        o_Q => o_Reg1Out
     );
 
-    Reg2Out_input : n_dffg
-    port MAP(
-        i_CLK   => i_CLK,
-        i_RST   => i_RST,
-        i_WE    => s_WE,
-        i_D     => x"00000000" when (i_FLUSH = '1') else i_Reg2Out,
-        o_Q     => o_Reg2Out
+    -- Reg2Out flip-flop
+    s_Reg2Out <= (others => '0') when i_FLUSH = '1' else i_Reg2Out;
+    Reg2Out_dffg: n_dffg
+    port map(
+        i_CLK => i_CLK,
+        i_RST => i_RST,
+        i_WE => s_WE,
+        i_D => s_Reg2Out,
+        o_Q => o_Reg2Out
+    );
+        
+    -- ShamOut flip-flop
+    s_Shamt <= (others => '0') when i_FLUSH = '1' else i_Shamt;
+    ShamOut_dffg: n_dffg
+    port map(
+        i_CLK => i_CLK,
+        i_RST => i_RST,
+        i_WE => s_WE,
+        i_D => s_Shamt,
+        o_Q => o_Shamt
     );
 
-    ZeroExtend_input : n_dffg
-    port MAP(
-        i_CLK   => i_CLK,
-        i_RST   => i_RST,
-        i_WE    => s_WE,
-        i_D     => x"00000000" when (i_FLUSH = '1') else i_ZeroExt,
-        o_Q     => o_ZeroExt
+    -- ZeroExt flip-flop
+    s_ZeroExt <= (others => '0') when i_FLUSH = '1' else i_ZeroExt;
+    ZeroExt_dffg: n_dffg
+    port map(
+        i_CLK => i_CLK,
+        i_RST => i_RST,
+        i_WE => s_WE,
+        i_D => s_ZeroExt,
+        o_Q => o_ZeroExt
     );
 
-    SignExtend_input : n_dffg
-    port MAP(
-        i_CLK   => i_CLK,
-        i_RST   => i_RST,
-        i_WE    => s_WE,
-        i_D     => x"00000000" when (i_FLUSH = '1') else i_SignExt,
-        o_Q     => o_SignExt
+    -- SignExt flip-flop
+    s_SignExt <= (others => '0') when i_FLUSH = '1' else i_SignExt;
+    SignExt_dffg: n_dffg
+    port map(
+        i_CLK => i_CLK,
+        i_RST => i_RST,
+        i_WE => s_WE,
+        i_D => s_SignExt,
+        o_Q => o_SignExt
     );
 
-    ShamOut_input : n_dffg
-    port MAP(
-        i_CLK   => i_CLK,
-        i_RST   => i_RST,
-        i_WE    => s_WE,
-        i_D     => x"00000000" when (i_FLUSH = '1') else i_Shamt,
-        o_Q     => o_Shamt
+    -- PCInc flip-flop
+    s_PCInc <= (others => '0') when i_FLUSH = '1' else i_PCInc;
+    PCInc_dffg: n_dffg
+    port map(
+        i_CLK => i_CLK,
+        i_RST => i_RST,
+        i_WE => s_WE,
+        i_D => s_PCInc,
+        o_Q => o_PCInc
     );
 
-    PCIncOut_input : n_dffg
-    port MAP(
-        i_CLK   => i_CLK,
-        i_RST   => i_RST,
-        i_WE    => s_WE,
-        i_D     => x"00000000" when (i_FLUSH = '1') else i_PCInc,
-        o_Q     => o_PCInc
-    );
-
-    RegWrAddrOut_input : n_dffg
+    -- RegWrAddr flip-flop
+    s_RegWrAddr <= "00000" when i_FLUSH = '1' else i_RegWrAddr;
+    RegWrAddr_dffg: n_dffg
     generic map(
-        N       => M
+        N => M
     )
-    port MAP(
-        i_CLK   => i_CLK,
-        i_RST   => i_RST,
-        i_WE    => s_WE,
-        i_D     => "00000" when (i_FLUSH = '1') else i_RegWrAddr,
-        o_Q     => o_RegWrAddr
+    port map(
+        i_CLK => i_CLK,
+        i_RST => i_RST,
+        i_WE => s_WE,
+        i_D => s_RegWrAddr,
+        o_Q => o_RegWrAddr
     );
 
-    EXControl_FF : ex_dffg
+    -- Instantiate flip-flops for control signals
+
+    -- EXControl flip-flop
+    s_EXControl <= zero_ex_control when i_FLUSH = '1' else i_EXControl;
+    EXControl_dffg: ex_dffg
     port map(
-        i_CLK   => i_CLK,
-        i_RST   => i_RST,
-        i_WE    => s_WE,
-        i_D     => zero_ex_control when (i_FLUSH = '1') else i_EXControl,
-        o_Q     => o_EXControl
+        i_CLK => i_CLK,
+        i_RST => i_RST,
+        i_WE => s_WE,
+        i_D => s_EXControl,
+        o_Q => o_EXControl
     );
 
-    MEMControl_FF : mem_dffg
+    -- MEMControl flip-flop
+    s_MEMControl <= zero_mem_control when i_FLUSH = '1' else i_MEMControl;
+    MEMControl_dffg: mem_dffg
     port map(
-        i_CLK   => i_CLK,
-        i_RST   => i_RST,
-        i_WE    => s_WE,
-        i_D     => zero_mem_control when (i_FLUSH = '1') else i_MEMControl,
-        o_Q     => o_MEMControl
+        i_CLK => i_CLK,
+        i_RST => i_RST,
+        i_WE => s_WE,
+        i_D => s_MEMControl,
+        o_Q => o_MEMControl
     );
 
-    WBControl_FF : wb_dffg
+    -- WBControl flip-flop
+    s_WBControl <= zero_wb_control when i_FLUSH = '1' else i_WBControl;
+    WBControl_dffg: wb_dffg
     port map(
-        i_CLK   => i_CLK,
-        i_RST   => i_RST,
-        i_WE    => s_WE,
-        i_D     => zero_wb_control when (i_FLUSH = '1') else i_WBControl,
-        o_Q     => o_WBControl
+        i_CLK => i_CLK,
+        i_RST => i_RST,
+        i_WE => s_WE,
+        i_D => s_WBControl,
+        o_Q => o_WBControl
     );
 
 end structure;

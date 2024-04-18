@@ -367,7 +367,7 @@ begin
     port map(
         i_CLK       => iCLK,
         i_RST       => iRST,
-        i_STALL     => s_HDU_DataHazard,
+        i_STALL     => s_HDU_ControlHazard,
         i_FLUSH     => '0',
         i_D         => s_PCNext,
         o_Q         => s_NextInstAddr
@@ -406,7 +406,7 @@ begin
         i_STALL         => s_HDU_DataHazard,
         i_FLUSH         => s_HDU_ControlHazard,
         i_PCInc         => if_PCInc,
-        i_Inst          => if_InstWOHazard,
+        i_Inst          => if_Inst,
         o_PCInc         => id_PCInc,
         o_Inst          => id_Inst
     ); 
@@ -419,7 +419,7 @@ begin
         i_EXRegRt   => ex_Reg2Out,
         i_IDRegRs   => id_Reg1Out,
         i_IDRegRt   => id_Reg2Out,
-        i_PCSel     => s_Control.pc_sel;
+        i_PCSel     => s_Control.pc_sel,
         o_DH        => s_HDU_DataHazard,
         o_CH        => s_HDU_ControlHazard
     );
@@ -442,14 +442,10 @@ begin
         i_Zero         => s_Zero,
         o_ctrl_Q       => s_Control
     );
-    
-    with s_HDU_DataHazard select
-        s_ControlWOHazard  <= zero_control when '1',
-        s_Control when others;
 
     ControlDivider: control_divider
     port map(
-        i_ctrl          => s_ControlWOHazard,
+        i_ctrl          => s_Control,
         o_EXControl     => id_EXControl,
         o_MEMControl    => id_MEMControl,
         o_WBControl     => id_WBControl 
@@ -487,6 +483,7 @@ begin
         i_CLK           => iCLK,
         i_RST           => iRST,
         i_STALL         => '0',
+        i_FLUSH         => s_HDU_ControlHazard,
         i_Reg1Out       => id_Reg1Out,
         i_Reg2Out       => id_Reg2Out,
         i_Shamt         => id_Shamt,

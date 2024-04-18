@@ -40,7 +40,10 @@ end IF_ID;
 
 architecture structure of IF_ID is
 
-    signal s_WE      : std_logic_vector(N-1 downto 0); 
+    signal s_WE      : std_logic; 
+    signal s_PCInc   : std_logic_vector(N-1 downto 0);
+    signal s_Inst    : std_logic_vector(N-1 downto 0);
+
 
     component n_dffg
         generic(N  : positive  := 32);
@@ -57,22 +60,25 @@ begin
 
     s_WE <= '0' when (i_STALL = '1') else '1';
 
+    s_PCInc <= x"00000000" when i_FLUSH = '1' else i_PCInc;        
     pc_input : n_dffg
-        port MAP(
-            i_CLK       => i_CLK,
-            i_RST       => i_RST,
-            i_WE        => s_WE,
-            i_D         => x"00000000" when (i_FLUSH = '1') else i_PCInc,
-            o_Q         => o_PCInc
-        );
+    port MAP(
+        i_CLK       => i_CLK,
+        i_RST       => i_RST,
+        i_WE        => s_WE,
+        i_D         => s_PCInc,
+        o_Q         => o_PCInc
+    );
 
+    
+    s_Inst <= x"00000000" when i_FLUSH = '1' else i_Inst;
     inst_input : n_dffg
-        port MAP(
-            i_CLK       => i_CLK,
-            i_RST       => i_RST,
-            i_WE        => s_WE,
-            i_D         => x"00000000" when (i_FLUSH = '1') else i_Inst,
-            o_Q         => o_Inst
-        );
+    port MAP(
+        i_CLK       => i_CLK,
+        i_RST       => i_RST,
+        i_WE        => s_WE,
+        i_D         => s_Inst,
+        o_Q         => o_Inst
+    );
 
 end structure;
