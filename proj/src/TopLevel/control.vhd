@@ -75,6 +75,9 @@ begin
     o_ctrl_Q.mem_wr    <= '1'   when (i_Opc = "101011") else       -- sw
 		          '0';
 
+    o_ctrl_Q.mem_rd    <= '1'   when (i_Opc = "100011" or i_Opc = "100000" or i_Opc = "100001" or i_Opc = "100100" or i_Opc = "100101") else       -- lw, lb, lh, lbu, lhu
+                  '0';
+
     o_ctrl_Q.alu_input1_sel  <= '1' when ((i_Opc = "000000" and i_Funct = "000000") or (i_Opc = "000000" and i_Funct = "000010") or (i_Opc = "000000" and i_Funct = "000011")) else -- sll, srl, sra
                                 '0';
 

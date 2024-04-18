@@ -33,6 +33,7 @@ package MIPS_types is
     halt            : std_logic;
     reg_wr          : std_logic;
     mem_wr          : std_logic;
+    mem_rd          : std_logic;
     alu_input1_sel  : std_logic;
     partial_mem_sel : std_logic_vector(1 downto 0);
     reg_dst_sel     : std_logic_vector(1 downto 0);
@@ -49,6 +50,7 @@ package MIPS_types is
 
   type mem_control_t is record
     mem_wr          : std_logic;
+    mem_rd          : std_logic;
     partial_mem_sel : std_logic_vector(1 downto 0);
   end record mem_control_t;
 

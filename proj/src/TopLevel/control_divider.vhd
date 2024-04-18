@@ -36,6 +36,7 @@ begin
 
     -- Memory stage control signals
     o_MEMControl.mem_wr                 <= i_ctrl.mem_wr;
+    o_MEMControl.mem_rd                 <= i_ctrl.mem_rd;
     o_MEMControl.partial_mem_sel        <= i_ctrl.partial_mem_sel;
 
     -- Write-back stage control signals

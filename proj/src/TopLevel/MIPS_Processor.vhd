@@ -43,6 +43,24 @@ end  MIPS_Processor;
 
 architecture structure of MIPS_Processor is
 
+    constant zero_alu_control   : alu_control_t                 := (
+        allow_ovfl          => '0',
+        alu_select          => "1111"
+    );
+    constant zero_control : control_t                           := (
+        alu_control         => zero_alu_control,
+        halt                => '0',
+        reg_wr              => '0',
+        mem_wr              => '0',
+        mem_rd              => '0',
+        alu_input1_sel      => '0',
+        alu_input2_sel      => "00",
+        partial_mem_sel     => "00",
+        reg_dst_sel         => "00",
+        reg_wr_sel          => "00",
+        pc_sel              => "00",
+    );
+
     -- Required halt signal -- for simulation
     signal s_Halt           : std_logic                         := '0';  -- TODO: this signal indicates to the simulation that intended program execution has completed. (Opcode: 01 0100)
 
@@ -71,8 +89,11 @@ architecture structure of MIPS_Processor is
     signal s_PCBranchNext   : std_logic_vector(N-1 downto 0)    := x"00000000"; 
         
     -- instruction Decode Signals
-    signal s_Zero           : std_logic                         := '0';
-    signal s_Control        : control_t; 
+    signal s_Zero               : std_logic                         := '0';
+    signal s_Control            : control_t; 
+    signal s_ControlWOHazard    : control_t;
+    signal s_HDU_DataHazard     : std_logic                         := '0';
+    signal s_HDU_ControlHazard  : std_logic                         := '0';
     
     -- Execute Signals
     signal s_ALUInput1      : std_logic_vector(N-1 downto 0)    := x"00000000";
@@ -82,7 +103,11 @@ architecture structure of MIPS_Processor is
     -- Temp signals for if stage
     -- out
     signal if_Inst          : std_logic_vector(N-1 downto 0)    := x"00000000";
+    signal if_InstWOHazard  : std_logic_vector(N-1 downto 0)    := x"00000000";
     signal if_PCInc         : std_logic_vector(N-1 downto 0)    := x"00000000";
+    signal if_PCWr          : std_logic                         := '1';
+    signal if_IFIDWr        : std_logic                         := '1';
+
 
     -- Temp signals for id stage
     -- in
@@ -160,7 +185,7 @@ architecture structure of MIPS_Processor is
         port(
             i_D0        : in std_logic_vector(N-1 downto 0);
             i_D1        : in std_logic_vector(N-1 downto 0);
-            i_C        : in std_logic;
+            i_C         : in std_logic;
             o_S         : out std_logic_vector(N-1 downto 0);
             o_C         : out std_logic
         ); 
@@ -178,6 +203,18 @@ architecture structure of MIPS_Processor is
             data        : in std_logic_vector((DATA_WIDTH-1) downto 0);
             we          : in std_logic := '1';
             q           : out std_logic_vector((DATA_WIDTH -1) downto 0)
+        );
+    end component;
+
+    component HDU
+        port(
+            i_MemRd         : in std_logic;
+            i_EXRegRt       : in std_logic_vector(N-1 downto 0);
+            i_IDRegRs       : in std_logic_vector(N-1 downto 0);
+            i_IDRegRt       : in std_logic_vector(N-1 downto 0);
+            i_PCSel         : in std_logic_vector(1 downto 0);
+            o_DH            : out std_logic;
+            o_CH            : out std_logic
         );
     end component;
         
@@ -240,12 +277,13 @@ architecture structure of MIPS_Processor is
         );    
 
         port(
-            i_CLK             : in std_logic;
-            i_RST             : in std_logic;
+            i_CLK           : in std_logic;
+            i_RST           : in std_logic;
+            i_WE            : in std_logic;
             i_PCInc         : in std_logic_vector(N-1 downto 0);
             i_Inst          : in std_logic_vector(N-1 downto 0);
-            o_PCInc        : out std_logic_vector(N-1 downto 0);
-            o_Inst         : out std_logic_vector(N-1 downto 0)
+            o_PCInc         : out std_logic_vector(N-1 downto 0);
+            o_Inst          : out std_logic_vector(N-1 downto 0)
         ); 
     end component;
 
@@ -339,11 +377,13 @@ begin
         s_PCBranchNext when "10",
         if_PCInc when others;
 
+    if_PCWr <= '0' when (s_HDU_DataHazard = '1') else '1';
+
     PC : pc_dffg
     port map(
         i_CLK       => iCLK,
         i_RST       => iRST,
-        i_WE        => '1',
+        i_WE        => if_PCWr,
         i_D         => s_PCNext,
         o_Q         => s_NextInstAddr
     );
@@ -374,17 +414,35 @@ begin
 
     -------------- IF/ID STAGE -----------------------------
 
+    with s_HDU_ControlHazard select
+        if_InstWOHazard <= x"00000000" when '1',
+        if_Inst when others;
+
+    if_IFIDWr <= '0' when (s_HDU_DataHazard = '1') else '1';
+    
     IIF_ID: IF_ID
     port map(
         i_CLK           => iCLK,
         i_RST           => iRST,
+        i_WE            => if_IFIDWr,
         i_PCInc         => if_PCInc,
-        i_Inst          => if_Inst,
+        i_Inst          => if_InstWOHazard,
         o_PCInc         => id_PCInc,
         o_Inst          => id_Inst
     ); 
 
     --------------- ID STAGE ---------------------------
+
+    i_HDU: HDU
+    port map(
+        i_MemRd     => ex_MEMControl.mem_rd,
+        i_EXRegRt   => ex_Reg2Out,
+        i_IDRegRs   => id_Reg1Out,
+        i_IDRegRt   => id_Reg2Out,
+        i_PCSel     => s_Control.pc_sel;
+        o_DH        => s_HDU_DataHazard,
+        o_CH        => s_HDU_ControlHazard
+    );
 
     i2_adder_n: adder_n
 	port map(
@@ -404,10 +462,14 @@ begin
         i_Zero         => s_Zero,
         o_ctrl_Q       => s_Control
     );
+    
+    with s_HDU_DataHazard select
+        s_ControlWOHazard  <= zero_control when '1',
+        s_Control when others;
 
     ControlDivider: control_divider
     port map(
-        i_ctrl          => s_Control,
+        i_ctrl          => s_ControlWOHazard,
         o_EXControl     => id_EXControl,
         o_MEMControl    => id_MEMControl,
         o_WBControl     => id_WBControl 

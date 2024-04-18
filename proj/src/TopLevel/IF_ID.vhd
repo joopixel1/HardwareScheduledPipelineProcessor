@@ -28,6 +28,7 @@ entity IF_ID is
     port(
         i_CLK           : in std_logic;
         i_RST           : in std_logic;
+        i_WE            : in std_logic;
         i_PCInc         : in std_logic_vector(N-1 downto 0);
         i_Inst          : in std_logic_vector(N-1 downto 0);
         o_PCInc         : out std_logic_vector(N-1 downto 0);
@@ -55,7 +56,7 @@ begin
         port MAP(
             i_CLK       => i_CLK,
             i_RST       => i_RST,
-            i_WE        => '1',
+            i_WE        => i_WE,
             i_D         => i_PCInc,
             o_Q         => o_PCInc
         );
@@ -64,7 +65,7 @@ begin
         port MAP(
             i_CLK       => i_CLK,
             i_RST       => i_RST,
-            i_WE        => '1',
+            i_WE        => i_WE,
             i_D         => i_Inst,
             o_Q         => o_Inst
         );
