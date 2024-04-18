@@ -54,6 +54,26 @@ end ID_EX;
 
 architecture structure of ID_EX is
 
+    constant zero_alu_control   : alu_control_t                 := (
+        allow_ovfl          => '0',
+        alu_select          => "1111"
+    );
+    constant zero_ex_control : ex_control_t                           := (
+        alu_control         => zero_alu_control,
+        alu_input1_sel      => '0',
+        alu_input2_sel      => "00"
+    );
+    constant zero_mem_control : mem_control_t                           := (
+        mem_wr              => '0',
+        mem_rd              => '0',
+        partial_mem_sel     => "00"
+    );
+    constant zero_wb_control : wb_control_t                           := (
+        halt                => '0',
+        reg_wr              => '0',
+        reg_wr_sel          => "00"
+    );
+
     signal s_WE      : std_logic_vector(N-1 downto 0); 
 
     component n_dffg
@@ -175,7 +195,7 @@ begin
         i_CLK   => i_CLK,
         i_RST   => i_RST,
         i_WE    => s_WE,
-        i_D     => x"00000000" when (i_FLUSH = '1') else i_EXControl,
+        i_D     => zero_ex_control when (i_FLUSH = '1') else i_EXControl,
         o_Q     => o_EXControl
     );
 
@@ -184,7 +204,7 @@ begin
         i_CLK   => i_CLK,
         i_RST   => i_RST,
         i_WE    => s_WE,
-        i_D     => x"00000000" when (i_FLUSH = '1') else i_MEMControl,
+        i_D     => zero_mem_control when (i_FLUSH = '1') else i_MEMControl,
         o_Q     => o_MEMControl
     );
 
@@ -193,7 +213,7 @@ begin
         i_CLK   => i_CLK,
         i_RST   => i_RST,
         i_WE    => s_WE,
-        i_D     => x"00000000" when (i_FLUSH = '1') else i_WBControl,
+        i_D     => zero_wb_control when (i_FLUSH = '1') else i_WBControl,
         o_Q     => o_WBControl
     );
 

@@ -43,24 +43,6 @@ end  MIPS_Processor;
 
 architecture structure of MIPS_Processor is
 
-    constant zero_alu_control   : alu_control_t                 := (
-        allow_ovfl          => '0',
-        alu_select          => "1111"
-    );
-    constant zero_control : control_t                           := (
-        alu_control         => zero_alu_control,
-        halt                => '0',
-        reg_wr              => '0',
-        mem_wr              => '0',
-        mem_rd              => '0',
-        alu_input1_sel      => '0',
-        alu_input2_sel      => "00",
-        partial_mem_sel     => "00",
-        reg_dst_sel         => "00",
-        reg_wr_sel          => "00",
-        pc_sel              => "00",
-    );
-
     -- Required halt signal -- for simulation
     signal s_Halt           : std_logic                         := '0';  -- TODO: this signal indicates to the simulation that intended program execution has completed. (Opcode: 01 0100)
 
@@ -91,7 +73,6 @@ architecture structure of MIPS_Processor is
     -- instruction Decode Signals
     signal s_Zero               : std_logic                         := '0';
     signal s_Control            : control_t; 
-    signal s_ControlWOHazard    : control_t;
     signal s_HDU_DataHazard     : std_logic                         := '0';
     signal s_HDU_ControlHazard  : std_logic                         := '0';
     
@@ -108,6 +89,7 @@ architecture structure of MIPS_Processor is
     -- Temp signals for id stage
     -- in
     signal id_Inst          : std_logic_vector(N-1 downto 0)    := x"00000000";
+    -- both
     signal id_PCInc         : std_logic_vector(N-1 downto 0)    := x"00000000";
     -- out
     signal id_EXControl     : ex_control_t;
@@ -168,6 +150,7 @@ architecture structure of MIPS_Processor is
             i_CLK        : in std_logic;                            -- Clock input
             i_RST        : in std_logic;                            -- Reset input
             i_STALL      : in std_logic;                            -- Write enable input
+            i_FLUSH      : in std_logic;                            -- always keep '0'
             i_D          : in std_logic_vector(N-1 downto 0);       -- Data value input
             o_Q          : out std_logic_vector(N-1 downto 0)       -- Data value output
         );
@@ -293,6 +276,8 @@ architecture structure of MIPS_Processor is
         port(
             i_CLK           : in std_logic;
             i_RST           : in std_logic;
+            i_STALL         : in std_logic;
+            i_FLUSH         : in std_logic;
             i_Reg1Out       : in std_logic_vector(N-1 downto 0);
             i_Reg2Out       : in std_logic_vector(N-1 downto 0);
             i_Shamt         : in std_logic_vector(N-1 downto 0);
@@ -325,6 +310,8 @@ architecture structure of MIPS_Processor is
         port(
             i_CLK           : in std_logic;
             i_RST           : in std_logic;
+            i_STALL         : in std_logic;
+            i_FLUSH         : in std_logic;
             i_ALUOut        : in std_logic_vector(N-1 downto 0);
             i_Reg2Out       : in std_logic_vector(N-1 downto 0);
             i_PCInc         : in std_logic_vector(N-1 downto 0);
@@ -349,6 +336,8 @@ architecture structure of MIPS_Processor is
         port(
             i_CLK           : in std_logic;
             i_RST           : in std_logic;
+            i_STALL         : in std_logic;
+            i_FLUSH         : in std_logic;
             i_ALUOut        : in std_logic_vector(N-1 downto 0);
             i_DMEMOut       : in std_logic_vector(N-1 downto 0);
             i_PartialMemOut : in std_logic_vector(N-1 downto 0);
@@ -379,6 +368,7 @@ begin
         i_CLK       => iCLK,
         i_RST       => iRST,
         i_STALL     => s_HDU_DataHazard,
+        i_FLUSH     => '0',
         i_D         => s_PCNext,
         o_Q         => s_NextInstAddr
     );
@@ -496,7 +486,7 @@ begin
     port map(
         i_CLK           => iCLK,
         i_RST           => iRST,
-        i_STALL         =>
+        i_STALL         => '0',
         i_Reg1Out       => id_Reg1Out,
         i_Reg2Out       => id_Reg2Out,
         i_Shamt         => id_Shamt,
@@ -548,6 +538,8 @@ begin
     port map(
         i_CLK           => iCLK,
         i_RST           => iRST,
+        i_STALL         => '0',
+        i_FLUSH         => '0',
         i_ALUOut        => ex_ALUOut,
         i_Reg2Out       => ex_Reg2Out,  
         i_PCInc         => ex_PCInc,
@@ -593,6 +585,8 @@ begin
     port map(
         i_CLK           => iCLK,
         i_RST           => iRST,
+        i_STALL         => '0',
+        i_FLUSH         => '0',
         i_ALUOut        => mem_ALUOut,
         i_DMEMOut       => mem_DMemOut,
         i_PartialMemOut => mem_PartialMemOut,

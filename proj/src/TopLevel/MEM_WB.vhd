@@ -28,6 +28,8 @@ entity MEM_WB is
     port (
         i_CLK           : in std_logic;
         i_RST           : in std_logic;
+        i_STALL         : in std_logic;
+        i_FLUSH         : in std_logic;
         i_ALUOut        : in std_logic_vector(N-1 downto 0);
         i_DMEMOut       : in std_logic_vector(N-1 downto 0);
         i_PartialMemOut : in std_logic_vector(N-1 downto 0);
@@ -44,6 +46,15 @@ entity MEM_WB is
 end entity MEM_WB;
 
 architecture behavior of MEM_WB is
+    
+    constant zero_wb_control : wb_control_t                           := (
+        halt                => '0',
+        reg_wr              => '0',
+        reg_wr_sel          => "00"
+    );
+
+    signal s_WE      : std_logic_vector(N-1 downto 0); 
+
     component n_dffg
         generic (
             N  : positive := N
@@ -68,13 +79,16 @@ architecture behavior of MEM_WB is
     end component;
 
 begin
+
+    s_WE <= '0' when (i_STALL = '1') else '1';
+
     -- Instantiate D flip-flops for each input
     ALUOut_dffg: n_dffg
     port map (
         i_CLK => i_CLK,
         i_RST => i_RST,
-        i_WE  => '1',
-        i_D   => i_ALUOut,
+        i_WE  => s_WE,
+        i_D   => x"00000000" when (i_FLUSH = '1') else i_ALUOut,
         o_Q   => o_ALUOut
     );
 
@@ -82,8 +96,8 @@ begin
     port map (
         i_CLK => i_CLK,
         i_RST => i_RST,
-        i_WE  => '1',
-        i_D   => i_DMEMOut,
+        i_WE  => s_WE,
+        i_D   => x"00000000" when (i_FLUSH = '1') else i_DMEMOut,
         o_Q   => o_DmemOut
     );
 
@@ -91,9 +105,18 @@ begin
     port map (
         i_CLK => i_CLK,
         i_RST => i_RST,
-        i_WE  => '1',
-        i_D   => i_PartialMemOut,
+        i_WE  => s_WE,
+        i_D   => x"00000000" when (i_FLUSH = '1') else i_PartialMemOut,
         o_Q   => o_PartialMemOut
+    );
+
+    PCInc_dffg: n_dffg
+    port map (
+        i_CLK => i_CLK,
+        i_RST => i_RST,
+        i_WE  => s_WE,
+        i_D   => x"00000000" when (i_FLUSH = '1') else i_PCInc,
+        o_Q   => o_PCInc
     );
 
     RegWrAddr_dffg: n_dffg
@@ -103,18 +126,9 @@ begin
     port map (
         i_CLK => i_CLK,
         i_RST => i_RST,
-        i_WE  => '1',
-        i_D   => i_RegWrAddr,
+        i_WE  => s_WE,
+        i_D   => "00000" when (i_FLUSH = '1') else i_RegWrAddr,
         o_Q   => o_RegWrAddr
-    );
-
-    PCInc_dffg: n_dffg
-    port map (
-        i_CLK => i_CLK,
-        i_RST => i_RST,
-        i_WE  => '1',
-        i_D   => i_PCInc,
-        o_Q   => o_PCInc
     );
 
     -- Instantiate flip-flop for WB control signal
@@ -122,8 +136,8 @@ begin
     port map (
         i_CLK => i_CLK,
         i_RST => i_RST,
-        i_WE  => '1',
-        i_D   => i_WBControl,
+        i_WE  => s_WE,
+        i_D   => zero_wb_control when (i_FLUSH = '1') else i_WBControl,
         o_Q   => o_WBControl
     );
 
