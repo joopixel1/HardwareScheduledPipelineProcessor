@@ -19,7 +19,7 @@ use work.MIPS_types.all;
 
 entity HDU is
     generic(
-        M : integer := ADDR_WIDTH
+        M : integer := SELECT_WIDTH
     );
 
     port(

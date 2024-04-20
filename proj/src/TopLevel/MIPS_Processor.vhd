@@ -192,9 +192,9 @@ architecture structure of MIPS_Processor is
     component HDU
         port(
             i_MemRd         : in std_logic;
-            i_EXRegRt       : in std_logic_vector(N-1 downto 0);
-            i_IDRegRs       : in std_logic_vector(N-1 downto 0);
-            i_IDRegRt       : in std_logic_vector(N-1 downto 0);
+            i_EXRegRt       : in std_logic_vector(M-1 downto 0);
+            i_IDRegRs       : in std_logic_vector(M-1 downto 0);
+            i_IDRegRt       : in std_logic_vector(M-1 downto 0);
             i_PCSel         : in std_logic_vector(1 downto 0);
             o_DH            : out std_logic;
             o_CH            : out std_logic
@@ -375,7 +375,7 @@ begin
     port map(
         i_CLK       => iCLK,
         i_RST       => iRST,
-        i_STALL     => s_HDU_ControlHazard,
+        i_STALL     => s_HDU_DataHazard,
         i_FLUSH     => '0',
         i_D         => s_PCNext,
         o_Q         => s_NextInstAddr
@@ -493,7 +493,7 @@ begin
         i_CLK           => iCLK,
         i_RST           => iRST,
         i_STALL         => '0',
-        i_FLUSH         => s_HDU_ControlHazard,
+        i_FLUSH         => s_HDU_DataHazard,
         i_Reg1Out       => id_Reg1Out,
         i_Reg2Out       => id_Reg2Out,
         i_Shamt         => id_Shamt,
