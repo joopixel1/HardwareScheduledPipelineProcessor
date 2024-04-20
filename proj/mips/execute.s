@@ -103,19 +103,15 @@ lh $30, 4($31)
 
 
 beq $16, $19, Lal
-sll $0, $0, 0
 
 Lal:
 beq $16, $17, Te
-sll $0, $0, 0
 
 Te:
 bne $16, $19, Un
-sll $0, $0, 0
 
 Un:
 bne $16, $17, Jus
-sll $0, $0, 0
 
 
 Jus:
@@ -129,15 +125,12 @@ Ade:
 slt $8, $0, $20
 slt $9, $0, $21
 j T
-sll $0, $0, 0
 
 funct:
 sll $0, $0, 0
 jr $31
-sll $0, $0, 0
  
 T:
 jal funct
-sll $0, $0, 0
 
 halt
