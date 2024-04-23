@@ -9,16 +9,11 @@ array: .word 0, 0, 0, 0, 0, 0
 # code/instruction section
 .text
 lui $1, 0x7fff # $1 - 0x7fff0000
-sll $0, $0, 0
-sll $0, $0, 0
 
 addiu $2, $1, 0x7fff # $2 - 0x7fff7fff
-sll $0, $0, 0
-sll $0, $0, 0
 addiu $2, $2, 0x7fff # $2 - 0x7ffffffe
-sll $0, $0, 0
-sll $0, $0, 0
 addiu $3, $2, 0x7fff # $3 - 0x80007ffd
+
 addiu $4, $1, 0x7fff # $4 - 0x7fff7fff
 
 addiu $5, $2, 0x7fff # $5 - 0x8007fffd
@@ -52,28 +47,22 @@ sll $3, $3, 0x0004 # $3 - 0x0007ffd0
 sra $2, $2, 0x0001 # $2 - 0xfffffffe
 sra $3, $3, 0x0004 # $3 - 0x00007ffd
 
-
 srl $2, $2, 0x0001 # $2 - 0x0fffffff
 srl $3, $3, 0x0004 # $3 - 0x000007ff
-
 
 addiu $10, $0, 8 # $10 - 0x00000008
 addiu $11, $0, 16 # $11 - 0x00000010
 
-
 sllv $4, $4, $10 # $4 - 0xff7fff00
 sllv $5, $5, $11 # $5 - 0x7ffd0000
-
 
 srav $4, $4, $10 # $4 - 0xffff7fff
 srav $5, $5, $11 # $5 - 0x00007ffd
 
-
 srlv $4, $4, $10 # $4 - 0x00ff7fff
 srlv $5, $5, $11 # $5 - 0x00000000
 
-
-lasw $31, array
+la $31, array
 sw $19, 0($31)
 sw $20, 4($31)
 sw $21, 8($31)
@@ -129,5 +118,9 @@ jr $31
  
 T:
 jal funct
+sll $0, $0, 0
+
+
+
 
 halt

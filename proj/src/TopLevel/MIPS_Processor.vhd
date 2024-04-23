@@ -540,30 +540,30 @@ begin
 
     --------------- EX STAGE -----------------------------
 
+    with forwardA_sel select
+        s_forwardA_out <=   s_RegWrData when "01",   -- mem hazard
+                            mem_ALUOut  when "10",   -- ex hazard
+                            ex_Reg1Out when others;
+
+    with forwardB_sel select
+        s_forwardB_out <=   s_RegWrData when "01",   -- mem hazard
+                            mem_ALUOut  when "10",   -- ex hazard
+                            ex_Reg2Out when others;
+
     with ex_EXControl.alu_input1_sel select
-        s_ALUInput1 <= ex_Reg1Out when '0',
+        s_ALUInput1 <= s_forwardA_out when '0',
         ex_Shamt when others;
     
     with ex_EXControl.alu_input2_sel select
-        s_ALUInput2 <= ex_Reg2Out when "00",
+        s_ALUInput2 <= s_forwardB_out when "00",
         ex_SignExt when "10",
         ex_ZeroExt when "11",
         (others => '-') when others;
 
-    with forwardA_sel select
-        s_forwardA_out <= s_RegWrData when "01",   -- mem hazard
-                          mem_ALUOut  when "10",   -- ex hazard
-                          s_ALUInput1 when others;
-
-    with forwardB_sel select
-        s_forwardB_out <= s_RegWrData when "01",   -- mem hazard
-                          mem_ALUOut  when "10",   -- ex hazard
-                          s_ALUInput2 when others;
-
     ALUObject: alu
     port map(
-        i_D0        => s_forwardA_out,
-        i_D1        => s_forwardB_out,
+        i_D0        => s_ALUInput1,
+        i_D1        => s_ALUInput2,
         i_C         => ex_EXControl.alu_control,
         o_OVFL      => s_Ovfl,
         o_Q         => ex_ALUOut
