@@ -144,6 +144,11 @@ architecture structure of MIPS_Processor is
     signal wb_RegWrAddr     : std_logic_vector(M-1 downto 0)    := "00000";
     signal wb_PartialMemOut : std_logic_vector(N-1 downto 0)    := x"00000000";
 
+    -- Temp signals for the forwarding unit
+    signal forwardA_sel     : std_logic_vector(1 downto 0)      := "00";
+    signal forwardB_sel     : std_logic_vector(1 downto 0)      := "00";
+    signal s_forwardA_out   : std_logic_vector(N-1 downto 0)    := x"00000000";
+    signal s_forwardB_out   : std_logic_vector(N-1 downto 0)    := x"00000000";
 
     component pc_dffg
         generic(
@@ -198,6 +203,19 @@ architecture structure of MIPS_Processor is
             i_PCSel         : in std_logic_vector(1 downto 0);
             o_DH            : out std_logic;
             o_CH            : out std_logic
+        );
+    end component;
+
+    component forwarding_unit
+        port(
+            i_ID_EX_RegRs          : in std_logic_vector(M-1 downto 0);
+            i_ID_EX_RegRt          : in std_logic_vector(M-1 downto 0);
+            i_EX_MEM_RegWrite      : in std_logic;
+            i_MEM_WB_RegWrite      : in std_logic;
+            i_EX_MEM_Rd_addr       : in std_logic_vector(M-1 downto 0);
+            i_MEM_WB_Rd_addr       : in std_logic_vector(M-1 downto 0);
+            o_LSmux                : out std_logic_vector(1 downto 0);    
+            o_RSmux                : out std_logic_vector(1 downto 0)  
         );
     end component;
         
@@ -532,10 +550,20 @@ begin
         ex_ZeroExt when "11",
         (others => '-') when others;
 
+    with forwardA_sel select
+        s_forwardA_out <= s_RegWrData when "01",   -- mem hazard
+                          mem_ALUOut  when "10",   -- ex hazard
+                          s_ALUInput1 when others;
+
+    with forwardB_sel select
+        s_forwardB_out <= s_RegWrData when "01",   -- mem hazard
+                          mem_ALUOut  when "10",   -- ex hazard
+                          s_ALUInput2 when others;
+
     ALUObject: alu
     port map(
-        i_D0        => s_ALUInput1,
-        i_D1        => s_ALUInput2,
+        i_D0        => s_forwardA_out,
+        i_D1        => s_forwardB_out,
         i_C         => ex_EXControl.alu_control,
         o_OVFL      => s_Ovfl,
         o_Q         => ex_ALUOut
@@ -543,6 +571,18 @@ begin
 
     oALUOut    <= ex_ALUOut;
 
+    -------------------forwarding unit--------------------
+    forwarding: forwarding_unit
+    port map(
+        i_ID_EX_RegRs         => ex_Reg1Addr,
+        i_ID_EX_RegRt         => ex_Reg2Addr,
+        i_EX_MEM_RegWrite     => mem_WBControl.reg_wr,
+        i_MEM_WB_RegWrite     => wb_WBControl.reg_wr,
+        i_EX_MEM_Rd_addr      => mem_RegWrAddr,
+        i_MEM_WB_Rd_addr      => wb_RegWrAddr,
+        o_LSmux               => forwardA_sel,
+        o_RSmux               => forwardB_sel
+    );
     ------------------ EX/MEM STAGE -----------------------
 
     IEX_MEM: EX_MEM
@@ -564,7 +604,7 @@ begin
         o_MEMControl    => mem_MEMControl,
         o_WBControl     => mem_WBControl
     ); 
-
+    
     ------------------ MEM STAGE --------------------------
     
     DMem: mem
