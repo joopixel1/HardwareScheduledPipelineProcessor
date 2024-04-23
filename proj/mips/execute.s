@@ -20,7 +20,7 @@ sll $0, $0, 0
 sll $0, $0, 0
 addiu $3, $2, 0x7fff # $3 - 0x80007ffd
 addiu $4, $1, 0x7fff # $4 - 0x7fff7fff
-sll $0, $0, 0
+
 addiu $5, $2, 0x7fff # $5 - 0x8007fffd
 
 addu $6, $1, $2 # $6 - 0xfffefffe
@@ -48,35 +48,32 @@ nor $21, $1, $2 #$21 = 0x80000001
 
 sll $2, $2, 0x0001 # $2 - 0xfffffffc
 sll $3, $3, 0x0004 # $3 - 0x0007ffd0
-sll $0, $0, 0
 
 sra $2, $2, 0x0001 # $2 - 0xfffffffe
 sra $3, $3, 0x0004 # $3 - 0x00007ffd
-sll $0, $0, 0
+
 
 srl $2, $2, 0x0001 # $2 - 0x0fffffff
 srl $3, $3, 0x0004 # $3 - 0x000007ff
-sll $0, $0, 0
+
 
 addiu $10, $0, 8 # $10 - 0x00000008
 addiu $11, $0, 16 # $11 - 0x00000010
-sll $0, $0, 0
+
 
 sllv $4, $4, $10 # $4 - 0xff7fff00
 sllv $5, $5, $11 # $5 - 0x7ffd0000
-sll $0, $0, 0
+
 
 srav $4, $4, $10 # $4 - 0xffff7fff
 srav $5, $5, $11 # $5 - 0x00007ffd
-sll $0, $0, 0
+
 
 srlv $4, $4, $10 # $4 - 0x00ff7fff
 srlv $5, $5, $11 # $5 - 0x00000000
 
 
 lasw $31, array
-sll $0, $0, 0
-sll $0, $0, 0
 sw $19, 0($31)
 sw $20, 4($31)
 sw $21, 8($31)

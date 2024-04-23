@@ -147,8 +147,8 @@ architecture structure of MIPS_Processor is
     -- Temp signals for the forwarding unit
     signal forwardA_sel     : std_logic_vector(1 downto 0)      := "00";
     signal forwardB_sel     : std_logic_vector(1 downto 0)      := "00";
-    signal s_forwardA_out   : std_logic_vector(N-1 downto 0)    := x"00000000";
-    signal s_forwardB_out   : std_logic_vector(N-1 downto 0)    := x"00000000";
+    signal s_forwardA_out   : std_logic_vector(N-1 downto 0);
+    signal s_forwardB_out   : std_logic_vector(N-1 downto 0);
 
     component pc_dffg
         generic(

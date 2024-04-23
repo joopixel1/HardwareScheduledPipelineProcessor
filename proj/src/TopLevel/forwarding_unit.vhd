@@ -42,13 +42,13 @@ begin
     -- 01, mem hazard
     -- 10, ex hazard
 
-    o_LSmux <=  "01" when (  (i_MEM_WB_RegWrite = '1' and (not (i_MEM_WB_Rd_addr = "00000"))) and (not (i_EX_MEM_RegWrite = '1' and (not (i_EX_MEM_Rd_addr = "00000"))) and (not(i_EX_MEM_Rd_addr = i_ID_EX_RegRs))) and (i_MEM_WB_Rd_addr = i_ID_EX_RegRs)) else 
-                "10" when (i_EX_MEM_RegWrite = '1' and (not (i_EX_MEM_Rd_addr = "00000")) and (i_EX_MEM_Rd_addr = i_ID_EX_RegRs)) else  -- forward left mux to alu
+    o_LSmux <=  "01" when ((i_MEM_WB_RegWrite = '1' and (i_MEM_WB_Rd_addr /= "00000")) and ( not ((i_EX_MEM_RegWrite = '1') and (i_EX_MEM_Rd_addr /= "00000") and (i_EX_MEM_Rd_addr = i_ID_EX_RegRs))) and (i_MEM_WB_Rd_addr = i_ID_EX_RegRs)) else 
+                "10" when ((i_EX_MEM_RegWrite = '1' and (i_EX_MEM_Rd_addr /= "00000")) and (i_EX_MEM_Rd_addr = i_ID_EX_RegRs)) else  -- forward left mux to alu
                 "00";
 
-    o_RSmux <= "01" when (  (i_MEM_WB_RegWrite = '1' and (not (i_MEM_WB_Rd_addr = "00000"))) and (not (i_EX_MEM_RegWrite = '1' and (not (i_EX_MEM_Rd_addr = "00000"))) and (not(i_EX_MEM_Rd_addr = i_ID_EX_RegRt))) and (i_MEM_WB_Rd_addr = i_ID_EX_RegRt)) else
-               "10" when (i_EX_MEM_RegWrite = '1' and (not (i_EX_MEM_Rd_addr = "00000")) and (i_EX_MEM_Rd_addr = i_ID_EX_RegRt)) else   -- forward right mux to alu
-               "00";
+    o_RSmux <=  "01" when ((i_MEM_WB_RegWrite = '1' and (i_MEM_WB_Rd_addr /= "00000")) and ( not ((i_EX_MEM_RegWrite = '1') and (i_EX_MEM_Rd_addr /= "00000") and (i_EX_MEM_Rd_addr = i_ID_EX_RegRt))) and (i_MEM_WB_Rd_addr = i_ID_EX_RegRt)) else
+                "10" when ((i_EX_MEM_RegWrite = '1' and (i_EX_MEM_Rd_addr /= "00000")) and (i_EX_MEM_Rd_addr = i_ID_EX_RegRt)) else   -- forward right mux to alu
+                "00";
 
 
 end behavior;
