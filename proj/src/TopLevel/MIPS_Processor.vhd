@@ -90,7 +90,7 @@ architecture structure of MIPS_Processor is
     -- Temp signals for id stage
     -- in
     -- both
-    signal id_Inst          : std_logic_vector(N-1 downto 0)    := x"00000000";
+    signal id_Inst          : std_logic_vector(N-1 downto 0)    := x"00000000";git 
     signal id_PCInc         : std_logic_vector(N-1 downto 0)    := x"00000000";
     -- out
     signal id_EXControl     : ex_control_t;
@@ -227,6 +227,7 @@ architecture structure of MIPS_Processor is
             i_Opc          : in std_logic_vector(5 downto 0); 
             ex_Opc         : in std_logic_vector(5 downto 0); 
             i_Funct        : in std_logic_vector(5 downto 0);
+            ex_Funct        : in std_logic_vector(5 downto 0);
             i_Zero         : in std_logic;   
             o_ctrl_Q       : out control_t
        ); 
@@ -391,7 +392,7 @@ begin
     -------------- IF STAGE -------------------------
      
     with s_Control.pc_sel select
-        s_PCNext <= id_Reg1Out when "11",
+        s_PCNext <= s_forwardA_out when "11",
         s_PCJumpNext when "01",
         s_PCBranchNext when "10",
         if_PCInc when others;
@@ -465,6 +466,7 @@ begin
         i_Opc          => id_Inst(31 downto 26),
         ex_Opc         => ex_Inst(31 downto 26),
         i_Funct        => id_Inst(5 downto 0),
+        ex_Funct        => ex_Inst(5 downto 0),
         i_Zero         => s_Zero,
         o_ctrl_Q       => s_Control
     );
