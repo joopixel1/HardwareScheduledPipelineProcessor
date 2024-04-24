@@ -89,8 +89,8 @@ architecture structure of MIPS_Processor is
 
     -- Temp signals for id stage
     -- in
-    signal id_Inst          : std_logic_vector(N-1 downto 0)    := x"00000000";
     -- both
+    signal id_Inst          : std_logic_vector(N-1 downto 0)    := x"00000000";
     signal id_PCInc         : std_logic_vector(N-1 downto 0)    := x"00000000";
     -- out
     signal id_EXControl     : ex_control_t;
