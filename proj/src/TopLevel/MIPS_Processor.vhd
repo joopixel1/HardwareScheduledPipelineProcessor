@@ -602,7 +602,7 @@ begin
         i_STALL         => '0',
         i_FLUSH         => '0',
         i_ALUOut        => ex_ALUOut,
-        i_Reg2Out       => ex_Reg2Out,  
+        i_Reg2Out       => s_forwardB_out,  
         i_PCInc         => ex_PCInc,
         i_RegWrAddr     => ex_RegWrAddr,      
         i_MEMControl    => ex_MEMControl,
