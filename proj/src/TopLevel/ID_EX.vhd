@@ -35,6 +35,7 @@ entity ID_EX is
         i_ZeroExt       : in std_logic_vector(N-1 downto 0);
         i_SignExt       : in std_logic_vector(N-1 downto 0);
         i_PCInc         : in std_logic_vector(N-1 downto 0);
+        i_Inst          : in std_logic_vector(N-1 downto 0);
         i_RegWrAddr     : in std_logic_vector(M-1 downto 0);
         i_Reg1Addr      : in std_logic_vector(M-1 downto 0);
         i_Reg2Addr      : in std_logic_vector(M-1 downto 0);
@@ -47,6 +48,7 @@ entity ID_EX is
         o_ZeroExt       : out std_logic_vector(N-1 downto 0);
         o_SignExt       : out std_logic_vector(N-1 downto 0);
         o_PCInc         : out std_logic_vector(N-1 downto 0);
+        o_Inst          : out std_logic_vector(N-1 downto 0);
         o_RegWrAddr     : out std_logic_vector(M-1 downto 0);
         o_Reg1Addr      : out std_logic_vector(M-1 downto 0);
         o_Reg2Addr      : out std_logic_vector(M-1 downto 0);
@@ -85,6 +87,7 @@ architecture structure of ID_EX is
     signal s_ZeroExt            : std_logic_vector(N-1 downto 0);
     signal s_SignExt            : std_logic_vector(N-1 downto 0);
     signal s_PCInc              : std_logic_vector(N-1 downto 0);
+    signal s_Inst               : std_logic_vector(N-1 downto 0);
     signal s_RegWrAddr          : std_logic_vector(M-1 downto 0);
     signal s_Reg1Addr           : std_logic_vector(M-1 downto 0);
     signal s_Reg2Addr           : std_logic_vector(M-1 downto 0);
@@ -204,6 +207,17 @@ begin
         i_WE => s_WE,
         i_D => s_PCInc,
         o_Q => o_PCInc
+    );
+
+    -- Inst flip-flop
+    s_Inst <= (others => '0') when i_FLUSH = '1' else i_Inst;
+    InstOut_input : n_dffg
+    port MAP(
+        i_CLK   => i_CLK,
+        i_RST   => i_RST,
+        i_WE    => s_WE,
+        i_D     => s_Inst,
+        o_Q     => o_Inst
     );
 
     -- RegWrAddr flip-flop

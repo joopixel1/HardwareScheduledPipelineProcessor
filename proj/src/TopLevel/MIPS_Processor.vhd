@@ -75,6 +75,7 @@ architecture structure of MIPS_Processor is
     signal s_Control            : control_t; 
     signal s_HDU_DataHazard     : std_logic                         := '0';
     signal s_HDU_ControlHazard  : std_logic                         := '0';
+    signal s_HDU_BranchHazard   : std_logic                         := '0';
     
     -- Execute Signals
     signal s_ALUInput1      : std_logic_vector(N-1 downto 0)    := x"00000000";
@@ -113,6 +114,7 @@ architecture structure of MIPS_Processor is
     signal ex_Shamt         : std_logic_vector(N-1 downto 0)    := x"00000000";
     signal ex_SignExt       : std_logic_vector(N-1 downto 0)    := x"00000000";
     signal ex_ZeroExt       : std_logic_vector(N-1 downto 0)    := x"00000000";
+    signal ex_Inst          : std_logic_vector(N-1 downto 0)    := x"00000000";
     -- out
     signal ex_ALUOut        : std_logic_vector(N-1 downto 0)    := x"00000000";
     -- both
@@ -202,7 +204,8 @@ architecture structure of MIPS_Processor is
             i_IDRegRt       : in std_logic_vector(M-1 downto 0);
             i_PCSel         : in std_logic_vector(1 downto 0);
             o_DH            : out std_logic;
-            o_CH            : out std_logic
+            o_CH            : out std_logic;
+            o_BH            : out std_logic
         );
     end component;
 
@@ -222,8 +225,9 @@ architecture structure of MIPS_Processor is
     component control
         port(
             i_Opc          : in std_logic_vector(5 downto 0); 
-            i_Funct        : in std_logic_vector(5 downto 0);   
-            i_Zero         : in std_logic;
+            ex_Opc         : in std_logic_vector(5 downto 0); 
+            i_Funct        : in std_logic_vector(5 downto 0);
+            i_Zero         : in std_logic;   
             o_ctrl_Q       : out control_t
        ); 
     end component;
@@ -257,6 +261,7 @@ architecture structure of MIPS_Processor is
             i_D1        : in std_logic_vector(N-1 downto 0);
             i_C         : in alu_control_t;         
             o_OVFL      : out std_logic;
+            o_Z         : out std_logic;
             o_Q         : out std_logic_vector(N-1 downto 0)
         ); 
     end component;
@@ -305,6 +310,7 @@ architecture structure of MIPS_Processor is
             i_Shamt         : in std_logic_vector(N-1 downto 0);
             i_ZeroExt       : in std_logic_vector(N-1 downto 0);
             i_SignExt       : in std_logic_vector(N-1 downto 0);
+            i_Inst          : in std_logic_vector(N-1 downto 0);
             i_PCInc         : in std_logic_vector(N-1 downto 0);
             i_RegWrAddr     : in std_logic_vector(M-1 downto 0);
             i_Reg1Addr      : in std_logic_vector(M-1 downto 0);
@@ -318,6 +324,7 @@ architecture structure of MIPS_Processor is
             o_ZeroExt       : out std_logic_vector(N-1 downto 0);
             o_SignExt       : out std_logic_vector(N-1 downto 0);
             o_PCInc         : out std_logic_vector(N-1 downto 0);
+            o_Inst          : out std_logic_vector(N-1 downto 0);
             o_RegWrAddr     : out std_logic_vector(M-1 downto 0);
             o_Reg1Addr      : out std_logic_vector(M-1 downto 0);
             o_Reg2Addr      : out std_logic_vector(M-1 downto 0);
@@ -430,7 +437,7 @@ begin
         i_CLK           => iCLK,
         i_RST           => iRST,
         i_STALL         => s_HDU_DataHazard,
-        i_FLUSH         => s_HDU_ControlHazard,
+        i_FLUSH         => s_HDU_ControlHazard or s_HDU_BranchHazard,
         i_PCInc         => if_PCInc,
         i_Inst          => if_Inst,
         o_PCInc         => id_PCInc,
@@ -447,16 +454,8 @@ begin
         i_IDRegRt   => id_Reg2Addr,
         i_PCSel     => s_Control.pc_sel,
         o_DH        => s_HDU_DataHazard,
-        o_CH        => s_HDU_ControlHazard
-    );
-
-    i2_adder_n: adder_n
-	port map(
-        i_D0        => id_PCInc,
-       	i_D1        => (18 to 31 => id_Inst(15)) & (id_Inst(15 downto 0) & "00"),
-        i_C         => '0',
-        o_S         => s_PCBranchNext,
-       	o_C         => open
+        o_CH        => s_HDU_ControlHazard,
+        o_BH        => s_HDU_BranchHazard
     );
 
     s_PCJumpNext <= id_PCInc(31 downto 28) & id_Inst(25 downto 0) & "00";
@@ -464,6 +463,7 @@ begin
     iControl: control
     port map(
         i_Opc          => id_Inst(31 downto 26),
+        ex_Opc         => ex_Inst(31 downto 26),
         i_Funct        => id_Inst(5 downto 0),
         i_Zero         => s_Zero,
         o_ctrl_Q       => s_Control
@@ -496,8 +496,6 @@ begin
         o_R2    => id_Reg2Out
     );
 
-    s_Zero <= '1' when (id_Reg1Out = id_Reg2Out) else '0';
-
     id_Shamt <= ((0 to 26 => '0') & id_Inst(10 downto 6));
     id_SignExt <= (0 to 15 => id_Inst(15)) & id_Inst(15 downto 0);
     id_ZeroExt <= x"0000" & id_Inst(15 downto 0);
@@ -511,13 +509,14 @@ begin
         i_CLK           => iCLK,
         i_RST           => iRST,
         i_STALL         => '0',
-        i_FLUSH         => s_HDU_DataHazard,
+        i_FLUSH         => s_HDU_DataHazard or s_HDU_BranchHazard,
         i_Reg1Out       => id_Reg1Out,
         i_Reg2Out       => id_Reg2Out,
         i_Shamt         => id_Shamt,
         i_SignExt       => id_SignExt,
         i_ZeroExt       => id_ZeroExt,
         i_PCInc         => id_PCInc, 
+        i_Inst          => id_Inst,
         i_RegWrAddr     => id_RegWrAddr,   
         i_Reg1Addr      => id_Reg1Addr,  
         i_Reg2Addr      => id_Reg2Addr,     
@@ -530,6 +529,7 @@ begin
         o_SignExt       => ex_SignExt,
         o_ZeroExt       => ex_ZeroExt,
         o_PCInc         => ex_PCInc, 
+        o_Inst          => ex_Inst,
         o_RegWrAddr     => ex_RegWrAddr, 
         o_Reg1Addr     => ex_Reg1Addr,  
         o_Reg2Addr     => ex_Reg2Addr,       
@@ -539,6 +539,15 @@ begin
     ); 
 
     --------------- EX STAGE -----------------------------
+
+    i2_adder_n: adder_n
+	port map(
+        i_D0        => ex_PCInc,
+       	i_D1        => (18 to 31 => ex_Inst(15)) & (ex_Inst(15 downto 0) & "00"),
+        i_C         => '0',
+        o_S         => s_PCBranchNext,
+       	o_C         => open
+    );
 
     with forwardA_sel select
         s_forwardA_out <=   s_RegWrData when "01",   -- mem hazard
@@ -566,6 +575,7 @@ begin
         i_D1        => s_ALUInput2,
         i_C         => ex_EXControl.alu_control,
         o_OVFL      => s_Ovfl,
+        o_Z         => s_Zero,
         o_Q         => ex_ALUOut
     );
 

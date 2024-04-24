@@ -29,12 +29,14 @@ entity HDU is
         i_IDRegRt       : in std_logic_vector(M-1 downto 0);
         i_PCSel         : in std_logic_vector(1 downto 0);
         o_DH            : out std_logic;
-        o_CH            : out std_logic
+        o_CH            : out std_logic;
+        o_BH            : out std_logic
     );
 end HDU;
 
 architecture behavior of HDU is
 begin
     o_DH <= '1' when ((i_MemRd = '1')  and ((i_EXRegRt = i_IDRegRs) or (i_EXRegRt = i_IDRegRt))) else '0';
-    o_CH <= '1' when not (i_PCSel = "00") else '0';
+    o_CH <= '1' when not (i_PCSel = "00" or i_PCSel = "10") else '0';
+    o_BH <= '1' when (i_PCSel = "10") else '0';
 end behavior;
