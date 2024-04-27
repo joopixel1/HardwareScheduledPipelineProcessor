@@ -30,12 +30,14 @@ entity MEM_WB is
         i_RST           : in std_logic;
         i_STALL         : in std_logic;
         i_FLUSH         : in std_logic;
+        i_Ovfl          : in std_logic;
         i_ALUOut        : in std_logic_vector(N-1 downto 0);
         i_DMEMOut       : in std_logic_vector(N-1 downto 0);
         i_PartialMemOut : in std_logic_vector(N-1 downto 0);
         i_RegWrAddr     : in std_logic_vector(M-1 downto 0);
         i_PCInc         : in std_logic_vector(N-1 downto 0);
         i_WBControl     : in wb_control_t;
+        o_Ovfl          : out std_logic;
         o_ALUOut        : out std_logic_vector(N-1 downto 0);
         o_DmemOut       : out std_logic_vector(N-1 downto 0);
         o_PartialMemOut : out std_logic_vector(N-1 downto 0);
@@ -53,13 +55,24 @@ architecture behavior of MEM_WB is
         reg_wr_sel          => "00"
     );
 
-    signal s_WE      : std_logic; 
-    signal s_ALUOut       : std_logic_vector(N-1 downto 0);
-    signal s_DMEMOut      : std_logic_vector(N-1 downto 0);
-    signal s_PartialMemOut: std_logic_vector(N-1 downto 0);
-    signal s_PCInc        : std_logic_vector(N-1 downto 0);
-    signal s_RegWrAddr    : std_logic_vector(M-1 downto 0);
-    signal s_WBControl    : wb_control_t;
+    signal s_WE             : std_logic; 
+    signal s_Ovfl           : std_logic;
+    signal s_ALUOut         : std_logic_vector(N-1 downto 0);
+    signal s_DMEMOut        : std_logic_vector(N-1 downto 0);
+    signal s_PartialMemOut  : std_logic_vector(N-1 downto 0);
+    signal s_PCInc          : std_logic_vector(N-1 downto 0);
+    signal s_RegWrAddr      : std_logic_vector(M-1 downto 0);
+    signal s_WBControl      : wb_control_t;
+
+    component dffg
+        port(
+            i_CLK        : in std_logic;                          
+            i_RST        : in std_logic;                         
+            i_WE         : in std_logic;                         
+            i_D          : in std_logic;   
+            o_Q          : out std_logic      
+        );
+    end component;
 
     component n_dffg
         generic (
@@ -87,6 +100,18 @@ architecture behavior of MEM_WB is
 begin
 
     s_WE <= '0' when (i_STALL = '1') else '1';
+
+    -- Instantiate D flip-flops for each input
+    s_Ovfl <= '0' when (i_FLUSH = '1') else i_Ovfl;
+    Ovfl_dffg: dffg
+    port map(
+        i_CLK => i_CLK,
+        i_RST => i_RST,
+        i_WE  => s_WE,
+        i_D   => s_Ovfl,
+        o_Q   => o_Ovfl
+    );
+
 
     -- Instantiate D flip-flops for each input
     -- ALUOut flip-flop

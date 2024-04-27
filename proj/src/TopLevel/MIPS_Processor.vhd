@@ -116,6 +116,7 @@ architecture structure of MIPS_Processor is
     signal ex_ZeroExt       : std_logic_vector(N-1 downto 0)    := x"00000000";
     signal ex_Inst          : std_logic_vector(N-1 downto 0)    := x"00000000";
     -- out
+    signal ex_Ovfl          : std_logic                         := '0';
     signal ex_ALUOut        : std_logic_vector(N-1 downto 0)    := x"00000000";
     -- both
     signal ex_MEMControl    : mem_control_t;
@@ -136,14 +137,16 @@ architecture structure of MIPS_Processor is
     signal mem_ALUOut       : std_logic_vector(N-1 downto 0)    := x"00000000";
     signal mem_PCInc        : std_logic_vector(N-1 downto 0)    := x"00000000";
     signal mem_RegWrAddr    : std_logic_vector(M-1 downto 0)    := "00000";
+    signal mem_Ovfl         : std_logic                         := '0';
     
     -- Temp signals for wb stage
     -- in
     signal wb_WBControl     : wb_control_t;
+    signal wb_Ovfl          : std_logic                         := '0';
+    signal wb_RegWrAddr     : std_logic_vector(M-1 downto 0)    := "00000";
     signal wb_DMemOut       : std_logic_vector(N-1 downto 0)    := x"00000000";
     signal wb_ALUOut        : std_logic_vector(N-1 downto 0)    := x"00000000";
     signal wb_PCInc         : std_logic_vector(N-1 downto 0)    := x"00000000";
-    signal wb_RegWrAddr     : std_logic_vector(M-1 downto 0)    := "00000";
     signal wb_PartialMemOut : std_logic_vector(N-1 downto 0)    := x"00000000";
 
     -- Temp signals for the forwarding unit
@@ -346,12 +349,14 @@ architecture structure of MIPS_Processor is
             i_RST           : in std_logic;
             i_STALL         : in std_logic;
             i_FLUSH         : in std_logic;
+            i_Ovfl          : in std_logic;
             i_ALUOut        : in std_logic_vector(N-1 downto 0);
             i_Reg2Out       : in std_logic_vector(N-1 downto 0);
             i_PCInc         : in std_logic_vector(N-1 downto 0);
             i_RegWrAddr     : in std_logic_vector(M-1 downto 0);
             i_MEMControl    : in mem_control_t;
             i_WBControl     : in wb_control_t;
+            o_Ovfl          : out std_logic;
             o_ALUOut        : out std_logic_vector(N-1 downto 0);
             o_Reg2Out       : out std_logic_vector(N-1 downto 0);
             o_PCInc         : out std_logic_vector(N-1 downto 0);
@@ -372,12 +377,14 @@ architecture structure of MIPS_Processor is
             i_RST           : in std_logic;
             i_STALL         : in std_logic;
             i_FLUSH         : in std_logic;
+            i_Ovfl          : in std_logic;
             i_ALUOut        : in std_logic_vector(N-1 downto 0);
             i_DMEMOut       : in std_logic_vector(N-1 downto 0);
             i_PartialMemOut : in std_logic_vector(N-1 downto 0);
             i_RegWrAddr     : in std_logic_vector(M-1 downto 0);
             i_PCInc         : in std_logic_vector(N-1 downto 0);
             i_WBControl     : in wb_control_t;
+            o_Ovfl          : out std_logic;
             o_ALUOut        : out std_logic_vector(N-1 downto 0);
             o_DmemOut       : out std_logic_vector(N-1 downto 0);
             o_PartialMemOut : out std_logic_vector(N-1 downto 0);
@@ -576,7 +583,7 @@ begin
         i_D0        => s_ALUInput1,
         i_D1        => s_ALUInput2,
         i_C         => ex_EXControl.alu_control,
-        o_OVFL      => s_Ovfl,
+        o_OVFL      => ex_Ovfl,
         o_Z         => s_Zero,
         o_Q         => ex_ALUOut
     );
@@ -603,12 +610,14 @@ begin
         i_RST           => iRST,
         i_STALL         => '0',
         i_FLUSH         => '0',
+        i_Ovfl          => ex_Ovfl,
         i_ALUOut        => ex_ALUOut,
         i_Reg2Out       => s_forwardB_out,  
         i_PCInc         => ex_PCInc,
         i_RegWrAddr     => ex_RegWrAddr,      
         i_MEMControl    => ex_MEMControl,
         i_WBControl     => ex_WBControl,
+        o_Ovfl          => mem_Ovfl,
         o_ALUOut        => mem_ALUOut,
         o_Reg2Out       => mem_Reg2Out,
         o_PCInc         => mem_PCInc, 
@@ -650,12 +659,14 @@ begin
         i_RST           => iRST,
         i_STALL         => '0',
         i_FLUSH         => '0',
+        i_Ovfl          => mem_Ovfl,
         i_ALUOut        => mem_ALUOut,
         i_DMEMOut       => mem_DMemOut,
         i_PartialMemOut => mem_PartialMemOut,
         i_RegWrAddr     => mem_RegWrAddr,
         i_PCInc         => mem_PCInc,
         i_WBControl     => mem_WBControl,
+        o_Ovfl          => wb_Ovfl,
         o_ALUOut        => wb_ALUOut,
         o_DmemOut       => wb_DMemOut,
         o_PartialMemOut => wb_PartialMemOut,
@@ -672,9 +683,10 @@ begin
         wb_PCInc when "10",
         wb_PartialMemOut when others; 
 
-    s_RegWr <= wb_WBControl.reg_wr;
+    s_RegWr     <= wb_WBControl.reg_wr;
     s_RegWrAddr <= wb_RegWrAddr;
-    s_Halt <= wb_WBControl.halt;
+    s_Halt      <= wb_WBControl.halt;
+    s_Ovfl      <= wb_Ovfl;
 
 end structure;
 

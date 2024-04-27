@@ -30,12 +30,14 @@ entity EX_MEM is
         i_RST           : in std_logic;
         i_STALL         : in std_logic;
         i_FLUSH         : in std_logic;
+        i_Ovfl          : in std_logic;
         i_ALUOut        : in std_logic_vector(N-1 downto 0);
         i_Reg2Out       : in std_logic_vector(N-1 downto 0);
         i_PCInc         : in std_logic_vector(N-1 downto 0);
         i_RegWrAddr     : in std_logic_vector(M-1 downto 0);
         i_MEMControl    : in mem_control_t;
         i_WBControl     : in wb_control_t;
+        o_Ovfl          : out std_logic;
         o_ALUOut        : out std_logic_vector(N-1 downto 0);
         o_Reg2Out       : out std_logic_vector(N-1 downto 0);
         o_PCInc         : out std_logic_vector(N-1 downto 0);
@@ -60,6 +62,7 @@ architecture structure of EX_MEM is
     );
 
     signal s_WE                 : std_logic; 
+    signal s_Ovfl               : std_logic;
     signal s_ALUOut             : std_logic_vector(N-1 downto 0);
     signal s_Reg2Out            : std_logic_vector(N-1 downto 0);
     signal s_PCInc              : std_logic_vector(N-1 downto 0);
@@ -67,6 +70,16 @@ architecture structure of EX_MEM is
     signal s_MEMControl         : mem_control_t;
     signal s_WBControl          : wb_control_t;
 
+    component dffg
+        port(
+            i_CLK        : in std_logic;                          
+            i_RST        : in std_logic;                         
+            i_WE         : in std_logic;                         
+            i_D          : in std_logic;   
+            o_Q          : out std_logic      
+        );
+    end component;
+    
     component n_dffg
         generic(
             N           :positive   := N
@@ -104,6 +117,17 @@ architecture structure of EX_MEM is
 begin
 
     s_WE <= '0' when (i_STALL = '1') else '1';
+
+    -- Instantiate D flip-flops for each input
+    s_Ovfl <= '0' when (i_FLUSH = '1') else i_Ovfl;
+    Ovfl_dffg: dffg
+    port map(
+        i_CLK => i_CLK,
+        i_RST => i_RST,
+        i_WE  => s_WE,
+        i_D   => s_Ovfl,
+        o_Q   => o_Ovfl
+    );
 
     -- Instantiate D flip-flops for each input
     s_ALUOut <= x"00000000" when (i_FLUSH = '1') else i_ALUOut;
